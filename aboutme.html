@@ -4,10 +4,77 @@
 <title>Page Title</title>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="stylesheet" href="">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Waiting+for+the+Sunrise&display=swap" rel="stylesheet">
+<link
+rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+/>
+
+
+<style>
+body {
+  font-family: 'Waiting for the Sunrise', cursive; 
+  margin: 10px 50px; 
+  letter-spacing: 6px; 
+  font-weight: bold;
+}
+
+h1.site-title {
+    font-size: 50px;
+    border-right: 2px solid rgba(255,255,255,.75);
+    white-space: nowrap;
+    overflow: hidden;
+    margin-top: 100px;
+    margin-bottom: 0;
+    padding: 0;
+    width: 100px;
+    animation: typewriter 1.2s steps(30) 1s 1 normal both,
+      blink 700ms steps(30) infinite normal;
+}
+
+@keyframes typewriter { from {width: 0;} to {width: 8.6em} }
+
+@keyframes blink {
+  from{border-right-color: rgba(0,0,0,.75);}
+  to{border-right-color: white;}
+}
+
+main {
+    font-size: 25px;
+}
+
+a:hover {
+    background: rgb(169, 169, 232);
+}
+</style>
+
 <body>
 
-<h1>Adam here!</h1>
-<p>Hello, <strong>my name</strong> is Adam. I <strong>grew up</strong> in a small city on the east coast of the Java island, called Gresik. Albeit being such a small city, I don't think I am the only one from the city to have studied at Harvard. Oh, my major is <strong>software engineering</strong>. Now, having some arguably advanced experience with backend development, I want to delve deeper into the world of front end development.</p>
+<h1 class="site-title anim-typewriter">hey? Adam's here!</h1>
 
+<main>
+    <p class="animate__animated animate__bounceInUp animate__delay-2s">Hello, <strong><u>my name</u></strong> is Adam. 
+        I <strong><u>grew up</u></strong> in a small city on the east coast of the Java island, Indonesia: Gresik. 
+        <i>Tho</i>, I don't think I am the only one from `the city` to have
+        studied at Harvard.
+        Oh, my <strong><u>major</u></strong> is software engineering. I am currently working at an AI tech company in Tokyo, as well as building
+        my own startup: <a href="https://systatum.com">Systatum</a>. My company recently created this <a href="https://coneto.systatum.com">React library</a>
+        and aim to create more useful software and tools in the future.
+        To complement my backend skill, I chose to take this class to delve deeper into the world of the front-end.
+    </p>
+
+    <div class="animate__animated animate__bounceInUp animate__delay-4s">
+        <p>My web and software development background:</p>
+        <ul>
+            <li>Know jQuery and some React</li>
+            <li>Created C compiler as well as my own programming language :D</li>
+            <li>Proficient in Visual Basic 6.0 :'D</li>
+        </ul>
+
+        <p>I took this class so I can get deeper knowledge of React, and how to use some design tools that can aid designers as well as front-end engineers alike, or any other interesting tools of value. And actually interested how we might even use AI for that.</p>
+    </div>
+</main>
 </body>
 </html>
