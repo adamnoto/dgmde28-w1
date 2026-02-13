@@ -1,0 +1,105 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<title>TicTacToe - Adam</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Waiting+for+the+Sunrise&display=swap" rel="stylesheet">
+<link
+rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+/>
+
+
+<style>
+body {
+    font-family: 'Waiting for the Sunrise', cursive; 
+    margin: 10px 50px; 
+    letter-spacing: 6px; 
+    font-weight: bold;
+}
+
+main {
+    font-size: 25px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+a:hover {
+    background: rgb(169, 169, 232);
+}
+
+img {
+    width: 100%;
+}
+
+.tttrow {
+    display: flex;
+    justify-content: center;
+}
+
+.tttcol {
+    height: 100px;
+    width: 100px;
+    border: 1px solid black;
+    display: inline-block;
+    margin: 5px;
+}
+
+.tttcol:hover {
+    background: #efefef;
+}
+
+.tttcol span {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    text-align: center;
+    vertical-align: middle;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+}
+
+</style>
+<body>
+
+    <main style="text-align: center;">
+        <h1 style="margin-bottom: 5px;">Tic Tac Toe</h1>
+
+        <div class="board-info">
+          X's turn
+        </div>
+
+        <div class="tttboard">
+            <div class="tttrow">
+                <div class="tttcol"></div>
+                <div class="tttcol"><span>X</span></div>
+                <div class="tttcol"><span>X</span></div>
+            </div>
+
+            <div class="tttrow">
+                <div class="tttcol"></div>
+                <div class="tttcol"><span>O</span></div>
+                <div class="tttcol"></div>
+            </div>
+
+            <div class="tttrow">
+                <div class="tttcol"></div>
+                <div class="tttcol"></div>
+                <div class="tttcol"></div>
+            </div>                        
+        </div>
+
+        <button>Start game</button>
+
+        <p style="font-size: 17px;">
+            <a href="https://en.wikipedia.org/wiki/Tic-tac-toe">Learn more</a> about tic tac toe.
+        </p>
+    </main>
+
+</body>
+</html>
