@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <meta charset="UTF-8">
@@ -53,6 +52,7 @@ img {
                 number = parseInt(number)
                 if (Number.isNaN(number)) {
                     document.write("<p>You entered non numeric, so... please refresh or click try again</p>")
+                    document.write("<button onClick='window.location.reload();'>Try again</button>")
                     return
                 }
                 for (i = 1; i <= 12; i++) {
