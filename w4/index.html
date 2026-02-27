@@ -1,0 +1,148 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<title>TicTacToe - Adam</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Waiting+for+the+Sunrise&display=swap" rel="stylesheet">
+<link
+rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+/>
+
+
+<style>
+body {
+    font-family: 'Waiting for the Sunrise', cursive; 
+    margin: 10px 50px; 
+    letter-spacing: 6px; 
+    font-weight: bold;
+    font-size: 25px;
+    margin: 0 auto;
+    text-align: center;
+    text-align: center;
+}
+
+a:hover {
+    background: rgb(169, 169, 232);
+}
+
+img {
+    width: 100%;
+}
+
+.tttboard {
+    display: flex;
+    justify-content: center;
+}
+
+.tttrow {
+    width: 396px;
+}
+
+.square {
+    height: 100px;
+    width: 100px;
+    border: 1px solid black;
+    display: inline-block;
+    margin: 5px;
+}
+
+.square:hover {
+    background: #efefef;
+}
+
+.square span {
+    display: table-cell;
+    font-size: 40px;
+    height: 100px;
+    width: 100px;
+    vertical-align: middle;
+}
+
+.board-info {
+    border: 4px dotted green;
+    display: inline-block;
+    padding: 5px 28px;
+    margin-bottom: 15px;
+}
+
+</style>
+<body>
+    <h1 style="margin-bottom: 5px;">Tic Tac Toe</h1>
+
+    <div class="board-info">
+      <span id="board-info-curplayer">
+      </span>'s turn
+    </div>
+
+    <div class="tttboard">
+        <div class="tttrow">
+            <script type="application/javascript">
+                const NUM_SQUARES = 9;
+                for (i = 0; i<NUM_SQUARES; i++) {
+                    id = "sq"+i;
+                    document.write("<div class='square' id='" + id + "' onclick='markSquare()'></div>")
+                }
+
+                function restart() {
+                    // clear out all the boxes
+                    for (i = 0; i<NUM_SQUARES; i++) {
+                        id = "sq" + i
+                        const el = document.getElementById(id)
+                        el.innerHTML = ""
+                    }
+
+                    markSquare.player = undefined
+                    markSquare()
+                }
+
+                function markSquare() {
+                    const turns = ["X", "O"];
+                    const opponents = ["O", "X"];
+                    
+                    // randomize who will play first between X and O
+                    if (markSquare.player == null) markSquare.player = Math.random() > 0.5 ? 1 : 0;
+
+                    const curPlayer = turns[markSquare.player];
+                    const oppPlayer = opponents[markSquare.player];
+                    document.getElementById("board-info-curplayer").innerText = curPlayer;
+                    console.debug(`Cur: ${curPlayer}. Opp: ${oppPlayer}.`)
+
+                    if (event && event.srcElement) {
+                        const alreadyFilled = event.srcElement.innerHTML.length > 0;
+                        if (alreadyFilled) {
+                            const el = event.srcElement;
+                            el.style.background = '#ffe6e6'
+                            setTimeout(() => {
+                                el.style.background = 'white'
+                            }, 900)
+                            return; // disregard the event
+                        } else {
+                            event.srcElement.innerHTML = `<span>${curPlayer}</span>`;
+                        }
+
+                        // change who's playing next if the square is clicked
+                        markSquare.player += 1;
+                        markSquare.player = markSquare.player % turns.length;
+                        console.debug(`Next player is: ${markSquare.player} (${turns[markSquare.player]})`);
+                        document.getElementById("board-info-curplayer").innerText = turns[markSquare.player];
+                    }
+                }
+
+                markSquare(); // initiate
+            </script>
+        </div>
+    </div>
+
+    <button onclick='restart(); markSquare()'>Start game</button>
+
+    <p style="font-size: 17px;">
+        <a href="https://en.wikipedia.org/wiki/Tic-tac-toe">Learn more</a> about tic tac toe.
+    </p>
+</body>
+
+</html>
