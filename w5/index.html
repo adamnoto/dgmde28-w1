@@ -1,0 +1,208 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<title>TicTacToe - Adam</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Waiting+for+the+Sunrise&display=swap" rel="stylesheet">
+<link
+rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+/>
+
+
+<style>
+body {
+    font-family: 'Waiting for the Sunrise', cursive; 
+    margin: 10px 50px; 
+    letter-spacing: 6px; 
+    font-weight: bold;
+    font-size: 25px;
+    margin: 0 auto;
+    text-align: center;
+    text-align: center;
+}
+
+a:hover {
+    background: rgb(169, 169, 232);
+}
+
+img {
+    width: 100%;
+}
+
+.tttboard {
+    display: flex;
+    justify-content: center;
+}
+
+.tttrow {
+    width: 396px;
+}
+
+.square {
+    height: 100px;
+    width: 100px;
+    border: 1px solid black;
+    display: inline-block;
+    margin: 5px;
+}
+
+.square:hover {
+    background: #efefef;
+}
+
+.square span {
+    display: table-cell;
+    font-size: 40px;
+    height: 100px;
+    width: 100px;
+    vertical-align: middle;
+}
+
+#board-info {
+    border: 4px dotted green;
+    display: inline-block;
+    padding: 5px 28px;
+    margin-bottom: 15px;
+}
+</style>
+
+<body>
+    <h1 style="margin-bottom: 5px;">Tic Tac Toe</h1>
+
+    <p id="board-info">
+    </p>
+
+    <div class="tttboard">
+        <div class="tttrow">
+            <script type="application/javascript">
+                const NUM_SQUARES = 9;
+                var moves = []
+                var winner = null
+                const boardInfoEl = document.getElementById("board-info")
+
+                const FIRST_PLAYER = Math.random() > 0.5 ? 1 : 0
+                for (i = 0; i<NUM_SQUARES; i++) {
+                    id = "sq"+i;
+                    document.write("<div class='square' id='" + id + "'></div>")
+                }
+
+                // initialize moves array
+                for (i = 0; i<NUM_SQUARES; i++) {
+                    document.getElementById("sq"+i).onclick = markSquare
+                }
+
+                function restart() {
+                    // clear out all the boxes and the moves
+                    moves = []
+                    winner = null
+                    for (i = 0; i<NUM_SQUARES; i++) {
+                        id = "sq" + i
+                        let el = document.getElementById(id)
+                        el.innerHTML = ""
+                        moves[i] = '-'
+                    }
+
+                    // remove any kind of animation
+                    boardInfoEl.classList.remove("game-ended")
+
+                    markSquare.player = FIRST_PLAYER
+                    markSquare()
+                }
+
+                function animateDisallow(el) {
+                    el.style.background = '#ffe6e6'
+                    setTimeout(() => {
+                        el.style.background = 'white'
+                    }, 900)                    
+                }
+
+                function markSquare() {
+                    let turns = ["X", "O"];
+                    let opponents = ["O", "X"];
+
+                    // stalemate or has winner, don't change board
+                    if (winner != null || !moves.includes('-')) {
+                        animateDisallow(this)
+                        console.debug("Game is done")
+                        return
+                    }
+                    
+                    let curPlayer = turns[markSquare.player];
+                    let oppPlayer = opponents[markSquare.player];
+                    boardInfoEl.innerText = `${curPlayer}'s turn`;
+                    console.debug(`Cur: ${curPlayer}. Opp: ${oppPlayer}.`)
+
+                    if (this && this.classList?.contains("square")) {
+                        let alreadyFilled = this.innerHTML.length > 0;
+                        if (alreadyFilled) {
+                            animateDisallow(this)
+                            return; // disregard the event
+                        } else {
+                            event.srcElement.innerHTML = `<span>${curPlayer}</span>`;
+                        }
+
+                        let id = this.getAttribute('id')
+                        document.querySelectorAll(".square").forEach((squareEl, idx) => {
+                            if (squareEl.getAttribute('id') === id) {
+                                moves[idx] = curPlayer
+                                console.debug(moves)
+                            }
+                        })
+
+                        // create an array winConditions of 8 strngs based on the moves array to represent
+                        // 8 possible win conditions (3 across, 3 down, and 2 diagonal). only put 'x's and 'o's
+                        // and '-'s in the string
+                        var winConditions = [
+                            // across
+                            '' + moves[0] + moves[1] + moves[2],
+                            '' + moves[3] + moves[4] + moves[5],
+                            '' + moves[6] + moves[7] + moves[8],
+                            // downs
+                            '' + moves[0] + moves[3] + moves[6],
+                            '' + moves[1] + moves[4] + moves[7],
+                            '' + moves[2] + moves[5] + moves[8],
+                            // diagonal
+                            '' + moves[0] + moves[4] + moves[8],
+                            '' + moves[2] + moves[4] + moves[6]
+                        ]
+
+                        // detect winner
+                        winner = curPlayer === 'X'
+                            ? (winConditions.includes('XXX') ? 'X' : undefined)
+                            : (winConditions.includes('OOO') ? 'O' : undefined)
+                        console.debug("Winner is", winner, "conditions:", winConditions)
+                        if (winner) {
+                            boardInfoEl.innerText = "Winner: " + winner
+                            boardInfoEl.classList.add("game-ended")
+                        } else if (!moves.includes('-')) {
+                            boardInfoEl.innerText = "Stalemate"
+                            boardInfoEl.classList.add("game-ended")
+                        } else {
+                            // change who's playing next if the square is clicked
+                            markSquare.player += 1;
+                            markSquare.player = markSquare.player % turns.length;
+                            console.debug(`Next player is: ${markSquare.player} (${turns[markSquare.player]})`);
+                            boardInfoEl.innerText = `${turns[markSquare.player]}'s turn`
+                        }
+                    }
+                }
+
+                // initiate and make the board play-able
+                restart();
+            </script>
+        </div>
+    </div>
+
+    <button onclick='restart(); markSquare()'>Start game</button>
+
+    <p style="font-size: 17px;">
+        <a href="https://en.wikipedia.org/wiki/Tic-tac-toe">Learn more</a> about tic tac toe.
+    </p>
+</body>
+
+</html>
