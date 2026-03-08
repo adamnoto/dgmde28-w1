@@ -1,0 +1,207 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<title>Joe's Hotdogs - Adam</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Waiting+for+the+Sunrise&display=swap" rel="stylesheet">
+<link
+rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+/>
+
+
+<style>
+body {
+    font-family: 'Waiting for the Sunrise', cursive; 
+    margin: 10px 50px; 
+    letter-spacing: 6px; 
+    font-weight: bold;
+    font-size: 25px;
+    margin: 0 auto;
+    text-align: center;
+    text-align: center;
+}
+
+a:hover {
+    background: rgb(169, 169, 232);
+}
+
+img {
+    width: 100%;
+}
+
+.tttboard {
+    display: flex;
+    justify-content: center;
+}
+
+.tttrow {
+    width: 396px;
+}
+
+.square {
+    height: 100px;
+    width: 100px;
+    border: 1px solid black;
+    display: inline-block;
+    margin: 5px;
+}
+
+.square:hover {
+    background: #efefef;
+}
+
+.square span {
+    display: table-cell;
+    font-size: 40px;
+    height: 100px;
+    width: 100px;
+    vertical-align: middle;
+}
+
+#board-info {
+    border: 4px dotted green;
+    display: inline-block;
+    padding: 5px 28px;
+    margin-bottom: 15px;
+}
+</style>
+
+<body>
+  <script>
+    // using class
+
+    function Item(name, price) {
+      this.name = name
+      this.price = price
+    }
+
+    let menu = [
+      new Item("hotdogs", 4),
+      new Item("fries", 3.5),
+      new Item("soda", 1.5),
+      new Item("sauerkraut", 1)
+    ]
+
+    // create select
+    let selectList = document.createElement("select")
+    for (item of menu) {
+      let option = document.createElement("option")
+      option.value = item.name
+      option.textContent = `${item.name} - $${item.price}`
+      selectList.appendChild(option)
+    }
+    document.body.appendChild(selectList)
+
+    // create a button
+    document.write("<br/>")
+    let addButton = document.createElement("button")
+    addButton.textContent = "Add to Cart"
+    document.body.appendChild(addButton)
+
+    // add a shopping cart div
+    let shopCartDiv = document.createElement("div")
+    shopCartDiv.style.display = "flex"
+    shopCartDiv.style.flexDirection = "column"
+    shopCartDiv.style.alignItems = "center"
+    document.body.appendChild(shopCartDiv)
+
+    // create a checkout button
+    let checkoutButton = document.createElement("button")
+    checkoutButton.textContent = "Checkout"
+    document.body.appendChild(checkoutButton)
+
+
+    // order system
+    let selectedItems = {}
+    let refreshCart = function (shouldReset = false) {
+      if (shouldReset) {
+        for (item of menu) {
+          console.debug(`Resetting for: ${item.name}`)
+          selectedItems[item.name] = 0;
+        }
+      }
+      console.debug(`Cart content: ${JSON.stringify(selectedItems)}`)
+
+      let cartTable = document.createElement("table")
+      let thead = document.createElement("thead")
+      let theadRow = document.createElement("tr")
+      thead.appendChild(theadRow)
+      cartTable.appendChild(thead)
+      for (col of ['Item', 'Qty', '@', 'Total']) {
+        let th = document.createElement("th")
+        th.textContent = col
+        th.style.border = "1px solid black"
+        theadRow.appendChild(th)
+      }
+      cartTable.style.width = "500px"
+      cartTable.style.border = "1px solid gray"
+
+      let order = {total: 0.0, items: []}
+      let total = 0.0
+      for (selectedItem in selectedItems) {
+        let qty = selectedItems[selectedItem]
+        if (qty === 0) continue
+
+        let itemRecord = menu.filter((i) => i.name === selectedItem)[0]
+        if (!itemRecord) {
+          console.error(`Cannot find: ${selectedItem} in the inventory`)
+          continue
+        }
+        let price = itemRecord.price
+        let subtotal = qty * price
+        let newCartRow = document.createElement("tr")
+        for (col of [selectedItem, qty, price, subtotal]) {
+          let td = document.createElement("td")
+          td.textContent = col
+          td.style.border = "1px solid black"
+          newCartRow.appendChild(td)
+        }
+        cartTable.appendChild(newCartRow)
+        total += subtotal
+
+        // record in the order data, for each individual item
+        order.items.push({name: selectedItem , qty: qty, subtotal: subtotal})
+
+        console.log(JSON.stringify(selectedItem), selectedItem.name) 
+      }
+      order.total = total
+
+      // re-insert table into the DOM
+      shopCartDiv.innerHTML = ""
+      shopCartDiv.appendChild(cartTable)
+
+      return order
+    }
+
+    let cartOrder // record the running order
+    addButton.onclick = function() {
+      const selectedItem = selectList.value
+      selectedItems[selectedItem]++
+      console.debug(`Adding: ${selectedItem}, cart: ${JSON.stringify(selectedItems)}`)
+      cartOrder = refreshCart()
+    }
+
+    checkoutButton.onclick = function () {
+      if (cartOrder == null || Object.keys(cartOrder) === 0) {
+        alert("No items")
+      }
+
+      text = `TOTAL: $${cartOrder.total}\n`
+      for (item of cartOrder.items) {
+        text += `\n${item.name} x ${item.qty}: $${item.subtotal}`
+      }
+
+      alert(text)
+      refreshCart(true)
+    }
+
+    refreshCart(true)
+  </script>
+</body>
+
+</html>
