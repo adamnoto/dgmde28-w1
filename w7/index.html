@@ -1,0 +1,397 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<title>Wordle - Adam</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Waiting+for+the+Sunrise&display=swap" rel="stylesheet">
+<link
+rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+/>
+
+
+<style>
+body {
+    font-family: 'Waiting for the Sunrise', cursive; 
+    margin: 10px 50px; 
+    letter-spacing: 6px; 
+    font-weight: bold;
+    font-size: 25px;
+    margin: 0 auto;
+    text-align: center;
+    text-align: center;
+    background: black;
+    color: white;
+}
+
+a:hover {
+    background: rgb(169, 169, 232);
+}
+
+img {
+    width: 100%;
+}
+
+.board {
+    display: flex;
+    justify-content: center;
+}
+
+.row {
+    width: 396px;
+    font-size: 0px;
+}
+
+.square {
+    font-family: arial;
+    height: 60px;
+    width: 60px;
+    border: 1px solid gray;
+    display: inline-block;
+    margin: 5px;
+    color: white;
+}
+
+.square.disabled {
+    color: gray !important;
+}
+
+.square:hover {
+    background: #2d2d2d;
+    color: white;
+}
+
+.square span {
+    display: table-cell;
+    font-size: 40px;
+    height: 60px;
+    width: 60px;
+    vertical-align: middle;
+}
+
+.debug-container {
+  display: block;
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  font-size: 0.7em;
+  font-family: "courier";
+  color: gray;
+  letter-spacing: 1px;
+}
+</style>
+
+<body>
+    <h1 style="margin-bottom: 5px;">Wordle</h1>
+
+  <!--
+    - if not word, not accepted
+    - if correct position green
+    - if incorrect position yellow
+    - user can type
+    - if not word in any spot dark gray
+    - base color is darker dark gray
+  -->
+
+    <div class='debug-container'>
+      <input type="checkbox" id="debug-check"></input><label for='debug-check'>debug</label>
+    </div>
+
+    <div class="board">
+        <div class="row" id="wordle-row">
+            <script type="application/javascript">
+                const WORD_LENGTH = 5
+                const MAX_ATTEMPTS = 6
+
+                function getCharBoxClass(row, col) {
+                  return `sq${row}_${col}`
+                }
+
+                function getCharBox(row, col) {
+                  return document.getElementById(getCharBoxClass(row, col))
+                }
+
+                function enterAtCharBox(row, col, char) {
+                  el = getCharBox(row, col)
+                  el.style.border = "1px solid gray"
+                  el.children[0].innerText = char
+                }
+
+                for (i = 0; i<MAX_ATTEMPTS; i++) {
+                  for (j = 0; j<WORD_LENGTH; j++) {
+                    id = getCharBoxClass(i, j);
+                    document.write("<div class='square' id='" + id + "'><span>X</span></div>")
+                  }
+                }
+            </script>
+        </div>
+
+        <div id="hidden-board-content" style="display: none;">
+          <p>Loading...</p>
+        </div>
+    </div>
+
+    <button onclick='restart();'>Start game</button>
+    <script>
+      // if "show" then the world board will be shown, and the hidden one will be hidden
+      // and reversely, on "hidden", the hidden one will be shown instead of the wordle board
+      function toggleBoard(state) {
+        var hiddenBoardContentEl = document.getElementById("hidden-board-content")
+        var wordleRow = document.getElementById("wordle-row")
+
+        let showWordleBoard = state === "show"
+        wordleRow.style.display = showWordleBoard ? "block" : "none"
+        hiddenBoardContentEl.style.display = showWordleBoard ? "none" : "block"
+      }
+
+      function cleanUpBoard() {
+        console.debug("Cleaning up the board")
+        let squares = document.getElementsByClassName("square")
+        let count = squares.length
+        for (i = 0; i < count; i++) {
+          squares[i].children[0].innerText = ""
+          squares[i].style.border = "1px solid gray"
+          squares[i].style.color = "white"
+          squares[i].classList.remove("disabled")
+        }
+      }
+
+      function generateWord(wordLength, callback) {
+        if (wordLength <= 0) return null
+
+        let idx = Math.floor(Math.random() * window.words.length);
+        callback(window.words[idx])
+      }
+
+      function restart() {
+        console.debug("Restarting the game")
+        window.currentRow = 0
+        window.currentCol = 0
+        window.wordleInDebugMode = document.getElementById("debug-check").checked
+
+        toggleBoard("hidden")
+        generateWord(WORD_LENGTH, (word) => {
+          cleanUpBoard()
+          toggleBoard("show")
+          hookTyping(word)
+        })
+
+        // set the focus to the document, to move it away from the start game
+        // so that pressing enter is not triggering a state reset
+        document.activeElement.blur()
+      }
+
+      /**
+       * 1) Accept any valid ASCII word
+       * 2) On special "Backspace" press, delete the last entered character
+       * 3) On special "Enter" press:
+       *    a) If the word is less than WORD_LENGTH, shows red border since there's missing char
+       *    b) If the word is == WORD_LENGTH, call assessWord() to test the word
+       */
+      function hookTyping(correctAnswer) {
+        // if not inputable, any press of the keyboard is ignored
+        let inputable = true
+
+        window.onkeydown = (event) => {
+          var key = event.key
+
+          if (!inputable) return
+
+          if (event.code === "Backspace") {
+            if (window.currentCol === 0) {
+              enterAtCharBox(window.currentRow, window.currentCol, "")
+            } else {
+              enterAtCharBox(window.currentRow, window.currentCol - 1, "")
+              window.currentCol -= 1
+            }
+            return
+          } else if (event.code >= 'KeyA' && event.code <= 'KeyZ') {
+            key = key.toLowerCase()
+
+            enterAtCharBox(window.currentRow, window.currentCol >= WORD_LENGTH ? window.currentCol - 1 : window.currentCol, key)
+
+            // move to the next box
+            if ((window.currentCol + 1) <= WORD_LENGTH)
+              window.currentCol += 1
+          } else if (key === "Enter") {
+            if (window.currentCol < WORD_LENGTH) {
+              for (i = 0; i < WORD_LENGTH; i++)
+                markNormalAt(i) // clear all other
+              markRedAt(window.currentCol)
+            } else {
+              for (i = 0; i < WORD_LENGTH; i++) markUsabilityAt(i, false)
+              inputable = false
+              assessWord(correctAnswer, ({ isValidWord, isCorrectGuess }) => {
+                inputable = true
+                for (i = 0; i < WORD_LENGTH; i++)
+                  markUsabilityAt(i, true)
+
+                if (isValidWord) {
+                  if ((window.currentRow + 1) === MAX_ATTEMPTS) {
+                    if (!isCorrectGuess) {
+                      alert("You lost! The word was: " + correctAnswer)
+                      inputable = false
+                    }
+                  } else {
+                    window.currentRow += 1
+                    window.currentCol = 0
+                  }
+
+                  if (isCorrectGuess) {
+                    alert("Congratulations!")
+                    inputable = false
+                  }
+                }
+              })
+            }
+          }
+        }
+      }
+
+      function getEnteredWord() {
+        word = ""
+        for (i = 0; i < WORD_LENGTH; i++) {
+          word = word + getCharBox(window.currentRow, i).innerText
+        }
+        return word
+      }
+
+      // utility functions to give color at a specific position of the current attempt's row
+      function markColorAt(pos, color) { getCharBox(window.currentRow, pos).style.border = "1px solid " + color }
+      // apply red border color for a character at a specific position in the current attempt's row
+      function markRedAt(pos) { markColorAt(pos, "red") }
+      // apply gray border color for a character at a specific position in the current attempt's row
+      function markNormalAt(pos) { markColorAt(pos, "gray") }
+      // apply yellow border color for a character at a specific position in the current attempt's row
+      function markYellowAt(pos) { markColorAt(pos, "yellow") }
+      // apply green border color for a character at a specific position in the current attempt's row
+      function markGreenAt(pos) { markColorAt(pos, "green") }
+      // apply gray text color for a character at a specific position in the current attempt's row
+      function markGrayAt(pos) { getCharBox(window.currentRow, pos).style.color = "#5d5d5d" }
+      // apply specific coloring to indicate if a character at certain position is "disabled" (locked)
+      function markUsabilityAt(pos, isUsable) {
+        let charBox = getCharBox(window.currentRow, pos)
+        if (isUsable) charBox.classList.remove("disabled")
+        else charBox.classList.add("disabled")
+      }
+
+      /**
+       * Assess whether the word is correct/sensible, and mark the letter board accordingly.
+       * Upon checking, a callback function will be called. The callback is mainly called/designed
+       * for interactivity and animation restoration.
+       */
+      function assessWord(correctAnswer, callback) {
+        var guess = getEnteredWord()
+        var req = new XMLHttpRequest()
+
+        req.onreadystatechange = function() {
+          if (this.readyState === XMLHttpRequest.DONE) {
+            let responseCode = this.status
+            let isCorrectGuess = true
+            if (responseCode === 200) {
+              // convert answer to dictionary of letters frequency
+              let lettersFreq = {}
+              correctAnswer.split("").forEach(c => {
+                if (lettersFreq[c]) lettersFreq[c]++
+                else lettersFreq[c] = 1
+              })
+
+              // mark each letter board correctly
+              for (i = 0; i < WORD_LENGTH; i++) {
+                let c = guess[i]; // the current character evaluated
+                if (correctAnswer[i] === c) markGreenAt(i)
+                else if (lettersFreq[c] && lettersFreq[c] > 0) markYellowAt(i)
+                else markGrayAt(i)
+
+                isCorrectGuess &= (correctAnswer[i] === guess[i])
+                lettersFreq[c] -= 1
+              }
+            } else {
+              alert("Not a valid word!")
+            }
+            callback({
+              isValidWord: responseCode === 200,
+              isCorrectGuess: isCorrectGuess
+            })
+          }
+        }
+
+        console.debug("Entered word:", word,window.wordleInDebugMode
+          ? `correct answer: ${correctAnswer}`
+          : ".")
+
+        req.open('GET', `https://api.dictionaryapi.dev/api/v2/entries/en/${guess}`, true)
+        req.send()
+      }
+
+      // start when DOM is fully loaded
+      document.addEventListener("DOMContentLoaded", function() {
+        restart()
+
+        // listen to debug mode check and unchecking
+        document.getElementById("debug-check").onclick = () => {
+          window.wordleInDebugMode = document.getElementById("debug-check").checked
+        }
+      });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      window.words = ["aback","abase","abate","abbey","abbot","abhor","abide","abled","abode","abort","about","above","abuse","abyss","acorn","acrid","actor","acute","adage","adapt","adept","admin","admit","adobe","adopt","adore","adorn","adult","affix","afire","afoot","afoul","after","again","agape","agate","agent","agile","aging","aglow","agony","agora","agree","ahead","aider","aisle","alarm","album","alert","algae","alibi","alien","align","alike","alive","allay","alley","allot","allow","alloy","aloft","alone","along","aloof","aloud","alpha","altar","alter","amass","amaze","amber","amble","amend","amiss","amity","among","ample","amply","amuse","angel","anger","angle","angry","angst","anime","ankle","annex","annoy","annul","anode","antic","anvil","aorta","apart","aphid","aping","apnea","apple","apply","apron","aptly","arbor","ardor","arena","argue","arise","armor","aroma","arose","array","arrow","arson","artsy","ascot","ashen","aside","askew","assay","asset","atoll","atone","attic","audio","audit","augur","aunty","avail","avert","avian","avoid","await","awake","award","aware","awash","awful","awoke","axial","axiom","axion","azure","bacon","badge","badly","bagel","baggy","baker","baler","balmy","banal","banjo","barge","baron","basal","basic","basil","basin","basis","baste","batch","bathe","baton","batty","bawdy","bayou","beach","beady","beard","beast","beech","beefy","befit","began","begat","beget","begin","begun","being","belch","belie","belle","belly","below","bench","beret","berry","berth","beset","betel","bevel","bezel","bible","bicep","biddy","bigot","bilge","billy","binge","bingo","biome","birch","birth","bison","bitty","black","blade","blame","bland","blank","blare","blast","blaze","bleak","bleat","bleed","bleep","blend","bless","blimp","blind","blink","bliss","blitz","bloat","block","bloke","blond","blood","bloom","blown","bluer","bluff","blunt","blurb","blurt","blush","board","boast","bobby","boney","bongo","bonus","booby","boost","booth","booty","booze","boozy","borax","borne","bosom","bossy","botch","bough","boule","bound","bowel","boxer","brace","braid","brain","brake","brand","brash","brass","brave","bravo","brawl","brawn","bread","break","breed","briar","bribe","brick","bride","brief","brine","bring","brink","briny","brisk","broad","broil","broke","brood","brook","broom","broth","brown","brunt","brush","brute","buddy","budge","buggy","bugle","build","built","bulge","bulky","bully","bunch","bunny","burly","burnt","burst","bused","bushy","butch","butte","buxom","buyer","bylaw","cabal","cabby","cabin","cable","cacao","cache","cacti","caddy","cadet","cagey","cairn","camel","cameo","canal","candy","canny","canoe","canon","caper","caput","carat","cargo","carol","carry","carve","caste","catch","cater","catty","caulk","cause","cavil","cease","cedar","cello","chafe","chaff","chain","chair","chalk","champ","chant","chaos","chard","charm","chart","chase","chasm","cheap","cheat","check","cheek","cheer","chess","chest","chick","chide","chief","child","chili","chill","chime","china","chirp","chock","choir","choke","chord","chore","chose","chuck","chump","chunk","churn","chute","cider","cigar","cinch","circa","civic","civil","clack","claim","clamp","clang","clank","clash","clasp","class","clean","clear","cleat","cleft","clerk","click","cliff","climb","cling","clink","cloak","clock","clone","close","cloth","cloud","clout","clove","clown","cluck","clued","clump","clung","coach","coast","cobra","cocoa","colon","color","comet","comfy","comic","comma","conch","condo","conic","copse","coral","corer","corny","couch","cough","could","count","coupe","court","coven","cover","covet","covey","cower","coyly","crack","craft","cramp","crane","crank","crash","crass","crate","crave","crawl","craze","crazy","creak","cream","credo","creed","creek","creep","creme","crepe","crept","cress","crest","crick","cried","crier","crime","crimp","crisp","croak","crock","crone","crony","crook","cross","croup","crowd","crown","crude","cruel","crumb","crump","crush","crust","crypt","cubic","cumin","curio","curly","curry","curse","curve","curvy","cutie","cyber","cycle","cynic","daddy","daily","dairy","daisy","dally","dance","dandy","datum","daunt","dealt","death","debar","debit","debug","debut","decal","decay","decor","decoy","decry","defer","deign","deity","delay","delta","delve","demon","demur","denim","dense","depot","depth","derby","deter","detox","deuce","devil","diary","dicey","digit","dilly","dimly","diner","dingo","dingy","diode","dirge","dirty","disco","ditch","ditto","ditty","diver","dizzy","dodge","dodgy","dogma","doing","dolly","donor","donut","dopey","doubt","dough","dowdy","dowel","downy","dowry","dozen","draft","drain","drake","drama","drank","drape","drawl","drawn","dread","dream","dress","dried","drier","drift","drill","drink","drive","droit","droll","drone","drool","droop","dross","drove","drown","druid","drunk","dryer","dryly","duchy","dully","dummy","dumpy","dunce","dusky","dusty","dutch","duvet","dwarf","dwell","dwelt","dying","eager","eagle","early","earth","easel","eaten","eater","ebony","eclat","edict","edify","eerie","egret","eight","eject","eking","elate","elbow","elder","elect","elegy","elfin","elide","elite","elope","elude","email","embed","ember","emcee","empty","enact","endow","enema","enemy","enjoy","ennui","ensue","enter","entry","envoy","epoch","epoxy","equal","equip","erase","erect","erode","error","erupt","essay","ester","ether","ethic","ethos","etude","evade","event","every","evict","evoke","exact","exalt","excel","exert","exile","exist","expel","extol","extra","exult","eying","fable","facet","faint","fairy","faith","false","fancy","fanny","farce","fatal","fatty","fault","fauna","favor","feast","fecal","feign","fella","felon","femme","femur","fence","feral","ferry","fetal","fetch","fetid","fetus","fever","fewer","fiber","fibre","ficus","field","fiend","fiery","fifth","fifty","fight","filer","filet","filly","filmy","filth","final","finch","finer","first","fishy","fixer","fizzy","fjord","flack","flail","flair","flake","flaky","flame","flank","flare","flash","flask","fleck","fleet","flesh","flick","flier","fling","flint","flirt","float","flock","flood","floor","flora","floss","flour","flout","flown","fluff","fluid","fluke","flume","flung","flunk","flush","flute","flyer","foamy","focal","focus","foggy","foist","folio","folly","foray","force","forge","forgo","forte","forth","forty","forum","found","foyer","frail","frame","frank","fraud","freak","freed","freer","fresh","friar","fried","frill","frisk","fritz","frock","frond","front","frost","froth","frown","froze","fruit","fudge","fugue","fully","fungi","funky","funny","furor","furry","fussy","fuzzy","gaffe","gaily","gamer","gamma","gamut","gassy","gaudy","gauge","gaunt","gauze","gavel","gawky","gayer","gayly","gazer","gecko","geeky","geese","genie","genre","ghost","ghoul","giant","giddy","gipsy","girly","girth","given","giver","glade","gland","glare","glass","glaze","gleam","glean","glide","glint","gloat","globe","gloom","glory","gloss","glove","glyph","gnash","gnome","godly","going","golem","golly","gonad","goner","goody","gooey","goofy","goose","gorge","gouge","gourd","grace","grade","graft","grail","grain","grand","grant","grape","graph","grasp","grass","grate","grave","gravy","graze","great","greed","green","greet","grief","grill","grime","grimy","grind","gripe","groan","groin","groom","grope","gross","group","grout","grove","growl","grown","gruel","gruff","grunt","guard","guava","guess","guest","guide","guild","guile","guilt","guise","gulch","gully","gumbo","gummy","guppy","gusto","gusty","gypsy","habit","hairy","halve","handy","happy","hardy","harem","harpy","harry","harsh","haste","hasty","hatch","hater","haunt","haute","haven","havoc","hazel","heady","heard","heart","heath","heave","heavy","hedge","hefty","heist","helix","hello","hence","heron","hilly","hinge","hippo","hippy","hitch","hoard","hobby","hoist","holly","homer","honey","honor","horde","horny","horse","hotel","hotly","hound","house","hovel","hover","howdy","human","humid","humor","humph","humus","hunch","hunky","hurry","husky","hussy","hutch","hydro","hyena","hymen","hyper","icily","icing","ideal","idiom","idiot","idler","idyll","igloo","iliac","image","imbue","impel","imply","inane","inbox","incur","index","inept","inert","infer","ingot","inlay","inlet","inner","input","inter","intro","ionic","irate","irony","islet","issue","itchy","ivory","jaunt","jazzy","jelly","jerky","jetty","jewel","jiffy","joint","joist","joker","jolly","joust","judge","juice","juicy","jumbo","jumpy","junta","junto","juror","kappa","karma","kayak","kebab","khaki","kinky","kiosk","kitty","knack","knave","knead","kneed","kneel","knelt","knife","knock","knoll","known","koala","krill","label","labor","laden","ladle","lager","lance","lanky","lapel","lapse","large","larva","lasso","latch","later","lathe","latte","laugh","layer","leach","leafy","leaky","leant","leapt","learn","lease","leash","least","leave","ledge","leech","leery","lefty","legal","leggy","lemon","lemur","leper","level","lever","libel","liege","light","liken","lilac","limbo","limit","linen","liner","lingo","lipid","lithe","liver","livid","llama","loamy","loath","lobby","local","locus","lodge","lofty","logic","login","loopy","loose","lorry","loser","louse","lousy","lover","lower","lowly","loyal","lucid","lucky","lumen","lumpy","lunar","lunch","lunge","lupus","lurch","lurid","lusty","lying","lymph","lynch","lyric","macaw","macho","macro","madam","madly","mafia","magic","magma","maize","major","maker","mambo","mamma","mammy","manga","mange","mango","mangy","mania","manic","manly","manor","maple","march","marry","marsh","mason","masse","match","matey","mauve","maxim","maybe","mayor","mealy","meant","meaty","mecca","medal","media","medic","melee","melon","mercy","merge","merit","merry","metal","meter","metro","micro","midge","midst","might","milky","mimic","mince","miner","minim","minor","minty","minus","mirth","miser","missy","mocha","modal","model","modem","mogul","moist","molar","moldy","money","month","moody","moose","moral","moron","morph","mossy","motel","motif","motor","motto","moult","mound","mount","mourn","mouse","mouth","mover","movie","mower","mucky","mucus","muddy","mulch","mummy","munch","mural","murky","mushy","music","musky","musty","myrrh","nadir","naive","nanny","nasal","nasty","natal","naval","navel","needy","neigh","nerdy","nerve","never","newer","newly","nicer","niche","niece","night","ninja","ninny","ninth","noble","nobly","noise","noisy","nomad","noose","north","nosey","notch","novel","nudge","nurse","nutty","nylon","nymph","oaken","obese","occur","ocean","octal","octet","odder","oddly","offal","offer","often","olden","older","olive","ombre","omega","onion","onset","opera","opine","opium","optic","orbit","order","organ","other","otter","ought","ounce","outdo","outer","outgo","ovary","ovate","overt","ovine","ovoid","owing","owner","oxide","ozone","paddy","pagan","paint","paler","palsy","panel","panic","pansy","papal","paper","parer","parka","parry","parse","party","pasta","paste","pasty","patch","patio","patsy","patty","pause","payee","payer","peace","peach","pearl","pecan","pedal","penal","pence","penne","penny","perch","peril","perky","pesky","pesto","petal","petty","phase","phone","phony","photo","piano","picky","piece","piety","piggy","pilot","pinch","piney","pinky","pinto","piper","pique","pitch","pithy","pivot","pixel","pixie","pizza","place","plaid","plain","plait","plane","plank","plant","plate","plaza","plead","pleat","plied","plier","pluck","plumb","plume","plump","plunk","plush","poesy","point","poise","poker","polar","polka","polyp","pooch","poppy","porch","poser","posit","posse","pouch","pound","pouty","power","prank","prawn","preen","press","price","prick","pride","pried","prime","primo","print","prior","prism","privy","prize","probe","prone","prong","proof","prose","proud","prove","prowl","proxy","prude","prune","psalm","pubic","pudgy","puffy","pulpy","pulse","punch","pupal","pupil","puppy","puree","purer","purge","purse","pushy","putty","pygmy","quack","quail","quake","qualm","quark","quart","quash","quasi","queen","queer","quell","query","quest","queue","quick","quiet","quill","quilt","quirk","quite","quota","quote","quoth","rabbi","rabid","racer","radar","radii","radio","rainy","raise","rajah","rally","ralph","ramen","ranch","randy","range","rapid","rarer","raspy","ratio","ratty","raven","rayon","razor","reach","react","ready","realm","rearm","rebar","rebel","rebus","rebut","recap","recur","recut","reedy","refer","refit","regal","rehab","reign","relax","relay","relic","remit","renal","renew","repay","repel","reply","rerun","reset","resin","retch","retro","retry","reuse","revel","revue","rhino","rhyme","rider","ridge","rifle","right","rigid","rigor","rinse","ripen","riper","risen","riser","risky","rival","river","rivet","roach","roast","robin","robot","rocky","rodeo","roger","rogue","roomy","roost","rotor","rouge","rough","round","rouse","route","rover","rowdy","rower","royal","ruddy","ruder","rugby","ruler","rumba","rumor","rupee","rural","rusty","sadly","safer","saint","salad","sally","salon","salsa","salty","salve","salvo","sandy","saner","sappy","sassy","satin","satyr","sauce","saucy","sauna","saute","savor","savoy","savvy","scald","scale","scalp","scaly","scamp","scant","scare","scarf","scary","scene","scent","scion","scoff","scold","scone","scoop","scope","score","scorn","scour","scout","scowl","scram","scrap","scree","screw","scrub","scrum","scuba","sedan","seedy","segue","seize","semen","sense","sepia","serif","serum","serve","setup","seven","sever","sewer","shack","shade","shady","shaft","shake","shaky","shale","shall","shalt","shame","shank","shape","shard","share","shark","sharp","shave","shawl","shear","sheen","sheep","sheer","sheet","sheik","shelf","shell","shied","shift","shine","shiny","shire","shirk","shirt","shoal","shock","shone","shook","shoot","shore","shorn","short","shout","shove","shown","showy","shrew","shrub","shrug","shuck","shunt","shush","shyly","siege","sieve","sight","sigma","silky","silly","since","sinew","singe","siren","sissy","sixth","sixty","skate","skier","skiff","skill","skimp","skirt","skulk","skull","skunk","slack","slain","slang","slant","slash","slate","slave","sleek","sleep","sleet","slept","slice","slick","slide","slime","slimy","sling","slink","sloop","slope","slosh","sloth","slump","slung","slunk","slurp","slush","slyly","smack","small","smart","smash","smear","smell","smelt","smile","smirk","smite","smith","smock","smoke","smoky","smote","snack","snail","snake","snaky","snare","snarl","sneak","sneer","snide","sniff","snipe","snoop","snore","snort","snout","snowy","snuck","snuff","soapy","sober","soggy","solar","solid","solve","sonar","sonic","sooth","sooty","sorry","sound","south","sower","space","spade","spank","spare","spark","spasm","spawn","speak","spear","speck","speed","spell","spelt","spend","spent","sperm","spice","spicy","spied","spiel","spike","spiky","spill","spilt","spine","spiny","spire","spite","splat","split","spoil","spoke","spoof","spook","spool","spoon","spore","sport","spout","spray","spree","sprig","spunk","spurn","spurt","squad","squat","squib","stack","staff","stage","staid","stain","stair","stake","stale","stalk","stall","stamp","stand","stank","stare","stark","start","stash","state","stave","stead","steak","steal","steam","steed","steel","steep","steer","stein","stern","stick","stiff","still","stilt","sting","stink","stint","stock","stoic","stoke","stole","stomp","stone","stony","stood","stool","stoop","store","stork","storm","story","stout","stove","strap","straw","stray","strip","strut","stuck","study","stuff","stump","stung","stunk","stunt","style","suave","sugar","suing","suite","sulky","sully","sumac","sunny","super","surer","surge","surly","sushi","swami","swamp","swarm","swash","swath","swear","sweat","sweep","sweet","swell","swept","swift","swill","swine","swing","swirl","swish","swoon","swoop","sword","swore","sworn","swung","synod","syrup","tabby","table","taboo","tacit","tacky","taffy","taint","taken","taker","tally","talon","tamer","tango","tangy","taper","tapir","tardy","tarot","taste","tasty","tatty","taunt","tawny","teach","teary","tease","teddy","teeth","tempo","tenet","tenor","tense","tenth","tepee","tepid","terra","terse","testy","thank","theft","their","theme","there","these","theta","thick","thief","thigh","thing","think","third","thong","thorn","those","three","threw","throb","throw","thrum","thumb","thump","thyme","tiara","tibia","tidal","tiger","tight","tilde","timer","timid","tipsy","titan","tithe","title","toast","today","toddy","token","tonal","tonga","tonic","tooth","topaz","topic","torch","torso","torus","total","totem","touch","tough","towel","tower","toxic","toxin","trace","track","tract","trade","trail","train","trait","tramp","trash","trawl","tread","treat","trend","triad","trial","tribe","trice","trick","tried","tripe","trite","troll","troop","trope","trout","trove","truce","truck","truer","truly","trump","trunk","truss","trust","truth","tryst","tubal","tuber","tulip","tulle","tumor","tunic","turbo","tutor","twang","tweak","tweed","tweet","twice","twine","twirl","twist","twixt","tying","udder","ulcer","ultra","umbra","uncle","uncut","under","undid","undue","unfed","unfit","unify","union","unite","unity","unlit","unmet","unset","untie","until","unwed","unzip","upper","upset","urban","urine","usage","usher","using","usual","usurp","utile","utter","vague","valet","valid","valor","value","valve","vapid","vapor","vault","vaunt","vegan","venom","venue","verge","verse","verso","verve","vicar","video","vigil","vigor","villa","vinyl","viola","viper","viral","virus","visit","visor","vista","vital","vivid","vixen","vocal","vodka","vogue","voice","voila","vomit","voter","vouch","vowel","vying","wacky","wafer","wager","wagon","waist","waive","waltz","warty","waste","watch","water","waver","waxen","weary","weave","wedge","weedy","weigh","weird","welch","welsh","wench","whack","whale","wharf","wheat","wheel","whelp","where","which","whiff","while","whine","whiny","whirl","whisk","white","whole","whoop","whose","widen","wider","widow","width","wield","wight","willy","wimpy","wince","winch","windy","wiser","wispy","witch","witty","woken","woman","women","woody","wooer","wooly","woozy","wordy","world","worry","worse","worst","worth","would","wound","woven","wrack","wrath","wreak","wreck","wrest","wring","wrist","write","wrong","wrote","wrung","wryly","yacht","yearn","yeast","yield","young","youth","zebra","zesty","zonal"]
+    </script>
+</body>
+
+</html>
