@@ -165,6 +165,7 @@ img {
     </div>
 
     <button onclick='restart();'>Start game</button>
+    <button style="display: none" id="offer-help-btn">Help</button>
     <script>
       // if "show" then the world board will be shown, and the hidden one will be hidden
       // and reversely, on "hidden", the hidden one will be shown instead of the wordle board
@@ -177,6 +178,9 @@ img {
         hiddenBoardContentEl.style.display = showWordleBoard ? "none" : "block"
       }
 
+      /**
+       * Clean up any styling on the board
+       */
       function cleanUpBoard() {
         console.debug("Cleaning up the board")
         let squares = document.getElementsByClassName("square")
@@ -189,6 +193,9 @@ img {
         }
       }
 
+      /**
+       * Select word to be the word for the game session
+       */
       function generateWord(wordLength, callback) {
         if (wordLength <= 0) return null
 
@@ -196,6 +203,9 @@ img {
         callback(window.words[idx])
       }
 
+      /**
+       * Start the game board fresh
+       */
       function restart() {
         console.debug("Restarting the game")
         window.currentRow = 0
@@ -207,11 +217,57 @@ img {
           cleanUpBoard()
           toggleBoard("show")
           hookTyping(word)
+          hookOfferHelp(word)
+          showHelpButton(true)          
         })
 
         // set the focus to the document, to move it away from the start game
         // so that pressing enter is not triggering a state reset
         document.activeElement.blur()
+      }
+
+      /**
+       * Reveal a character in the game
+       */
+      function hookOfferHelp(word) {
+        let offerHelpBtn = document.getElementById('offer-help-btn')
+        if (offerHelpBtn) {
+          offerHelpBtn.onclick = () => {
+            // set the focus to the document, so it doesn't trigger this action on enter again
+            document.activeElement.blur()
+
+            if (window.currentRow >= 0 && currentRow <= MAX_ATTEMPTS) {
+              let incorrectBoxIndexes = []
+              for (i = 0; i < WORD_LENGTH; i++) {
+                let charBoxEl = getCharBox(window.currentRow, i)
+                let c = charBoxEl.innerText
+                if (c != word[i]) incorrectBoxIndexes.push(i)
+              }
+
+
+              if (incorrectBoxIndexes.length > 0) {
+                // randomize which char to reveal
+                let revealPos = incorrectBoxIndexes.length > 1
+                  ? incorrectBoxIndexes[Math.floor(Math.random() * incorrectBoxIndexes.length)]
+                  : incorrectBoxIndexes[0];
+
+                console.debug("Revealing at pos", revealPos, "incorrect boxes:", incorrectBoxIndexes)
+                enterAtCharBox(window.currentRow, revealPos, word[revealPos])
+
+                // give green color to indicates it was due to help, and self-clear later
+                markGreenAt(revealPos)
+                setTimeout(() => { markNormalAt(revealPos) }, 650)
+
+                // recalculate current col otherwise the game can think that the -current- column
+                // is empty when it's actually filled through the offer help functionality
+                if (window.currentCol === revealPos && window.currentCol != WORD_LENGTH)
+                    window.currentCol += 1
+              } else {
+                window.currentCol = WORD_LENGTH; // no help needed, all filled
+              }
+            }
+          }
+        }
       }
 
       /**
@@ -247,6 +303,15 @@ img {
             if ((window.currentCol + 1) <= WORD_LENGTH)
               window.currentCol += 1
           } else if (key === "Enter") {
+            // recalculate current col because user might use the offer help feature
+            for (i = 0; i < WORD_LENGTH; i++) {
+              let c = getCharBox(window.currentRow, i).innerText
+              if (c == null || c == "") {
+                break
+              }
+              window.currentCol = i + 1
+            }
+
             if (window.currentCol < WORD_LENGTH) {
               for (i = 0; i < WORD_LENGTH; i++)
                 markNormalAt(i) // clear all other
@@ -281,6 +346,7 @@ img {
                     // increase the win rate
                     const currentWinRate = parseInt(document.getElementById("win-counter").textContent)
                     document.getElementById("win-counter").textContent = currentWinRate + 1
+                    showHelpButton(false)
                   }
                 }
               })
@@ -289,6 +355,9 @@ img {
         }
       }
 
+      /**
+       * Get the word entered for the current attempt
+       */
       function getEnteredWord() {
         word = ""
         for (i = 0; i < WORD_LENGTH; i++) {
@@ -314,6 +383,9 @@ img {
         let charBox = getCharBox(window.currentRow, pos)
         if (isUsable) charBox.classList.remove("disabled")
         else charBox.classList.add("disabled")
+      }
+      function showHelpButton(isShown) {
+        document.getElementById("offer-help-btn").style.display = isShown ? "inline-block" : "none"
       }
 
       /**
