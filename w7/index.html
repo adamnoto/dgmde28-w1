@@ -74,14 +74,38 @@ img {
 }
 
 .debug-container {
-  display: block;
-  position: absolute;
-  top: 5px;
-  left: 5px;
-  font-size: 0.7em;
-  font-family: "courier";
-  color: gray;
-  letter-spacing: 1px;
+    display: block;
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    font-size: 0.7em;
+    font-family: "courier";
+    color: gray;
+    letter-spacing: 1px;
+}
+
+.stats-container {
+    display: block;
+    position: absolute;
+    top: 30px;
+    border: 3px dotted gray;
+    margin-left: 8px;
+    margin-top: 5px;
+    padding: 5px 10px;
+}
+
+.stats-container p {
+    padding-top: 1px;
+    padding-bottom: 1px;
+    margin: 0;
+}
+
+.stats-container p #win-counter {
+    color: #49e549;
+}
+
+.stats-container p #lose-counter {
+    color: #ff7474;
 }
 </style>
 
@@ -99,6 +123,11 @@ img {
 
     <div class='debug-container'>
       <input type="checkbox" id="debug-check"></input><label for='debug-check'>debug</label>
+    </div>
+
+    <div class="stats-container">
+      <p>Win: <span id="win-counter">0</span></p>
+      <p>Lose: <span id="lose-counter">0</span></p>
     </div>
 
     <div class="board">
@@ -235,6 +264,10 @@ img {
                     if (!isCorrectGuess) {
                       alert("You lost! The word was: " + correctAnswer)
                       inputable = false
+
+                      // increase the lose rate
+                      const currentWinRate = parseInt(document.getElementById("lose-counter").textContent)
+                      document.getElementById("lose-counter").textContent = currentWinRate + 1
                     }
                   } else {
                     window.currentRow += 1
@@ -244,6 +277,10 @@ img {
                   if (isCorrectGuess) {
                     alert("Congratulations!")
                     inputable = false
+
+                    // increase the win rate
+                    const currentWinRate = parseInt(document.getElementById("win-counter").textContent)
+                    document.getElementById("win-counter").textContent = currentWinRate + 1
                   }
                 }
               })
