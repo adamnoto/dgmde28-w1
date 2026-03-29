@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <meta charset="UTF-8">
@@ -144,6 +143,37 @@ img {
   -webkit-user-select: none;
   user-select: none;
 }
+
+.letterboard-container .lbgroup .chr.crhalf {
+  background: #4b430e;
+}
+
+.letterboard-container .lbgroup .chr.crfull {
+  background: green;
+}
+
+.letterboard-container .lbgroup .chr.crnope {
+  background: #484848;
+}
+
+@media screen and (max-width: 700px) {
+  .letterboard-container {
+    margin-top: 4px;
+  }
+  .letterboard-container .lbgroup {
+    margin-bottom: 4px;
+  }
+
+  .letterboard-container .lbgroup .chr {
+    height: 30px;
+    width: 30px;
+    font-size: 18px;
+  }
+
+  .letterboard-container .lbgroup .chr span {
+    top: 1px;
+  }
+}
 </style>
 
 <body>
@@ -281,7 +311,6 @@ img {
                 let c = charBoxEl.innerText
                 if (c != word[i]) incorrectBoxIndexes.push(i)
               }
-
 
               if (incorrectBoxIndexes.length > 0) {
                 // randomize which char to reveal
@@ -448,15 +477,19 @@ img {
               })
 
               // mark each letter board correctly
+              let fullyCorrect = []
+              let halfCorrect = []
+              let notCorrect = []
               for (i = 0; i < WORD_LENGTH; i++) {
                 let c = guess[i]; // the current character evaluated
-                if (correctAnswer[i] === c) markGreenAt(i)
-                else if (lettersFreq[c] && lettersFreq[c] > 0) markYellowAt(i)
-                else markGrayAt(i)
+                if (correctAnswer[i] === c) markGreenAt(i), fullyCorrect.push(c)
+                else if (lettersFreq[c] && lettersFreq[c] > 0) markYellowAt(i), halfCorrect.push(c)
+                else markGrayAt(i), notCorrect.push(c)
 
                 isCorrectGuess &= (correctAnswer[i] === guess[i])
                 lettersFreq[c] -= 1
               }
+              renderLetterboard(fullyCorrect, halfCorrect, notCorrect)
             } else {
               alert("Not a valid word!")
             }
@@ -488,12 +521,20 @@ img {
       /**
        * Render the used letterboard
        */
-      function renderLetterboard() {
+      function renderLetterboard(
+        fullyCorrectKeys = [],
+        halfCorrectKeys = [],
+        notCorrectKeys = []
+      ) {
         const lbGroups = [
           ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
           ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
           ['↵', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '⌫']
         ]
+
+        // remove previous letterboard-container
+        let prevContainers = document.getElementsByClassName("letterboard-container")
+        for (i = 0; i < prevContainers.length; i++) prevContainers[i].remove()
 
         let lbEl = document.createElement("div")
         lbEl.classList.add("letterboard-container")
@@ -507,6 +548,13 @@ img {
             spanEl.innerText = char
             charBoardEl.appendChild(spanEl)
             lbGroupEl.appendChild(charBoardEl)
+
+            // prioritize fully correct by checking it first
+            let downChar = char.toLowerCase()
+            console.log(char, downChar, fullyCorrectKeys, halfCorrectKeys, fullyCorrectKeys.includes(downChar), halfCorrectKeys.includes(downChar))
+            if (fullyCorrectKeys.includes(downChar)) charBoardEl.classList.add("crfull")
+            else if (halfCorrectKeys.includes(downChar)) charBoardEl.classList.add("crhalf")
+            else if (notCorrectKeys.includes(downChar)) charBoardEl.classList.add("crnope")
           })
           lbEl.appendChild(lbGroupEl)
         })
