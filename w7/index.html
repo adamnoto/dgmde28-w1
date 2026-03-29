@@ -236,6 +236,7 @@ img {
     <button style="display: none" id="offer-help-btn">Help</button>
     <br/>
     <input title="Your guess" type="text" id="input" maxlength="5" onkeyup='pushInput(event)'/>
+    <button onclick="submitGuess()">Check my guess</button>
     <script>
       // if "show" then the world board will be shown, and the hidden one will be hidden
       // and reversely, on "hidden", the hidden one will be shown instead of the wordle board
@@ -290,11 +291,18 @@ img {
           hookOfferHelp(word)
           showHelpButton(true)
           renderLetterboard()
+          restartInputTextBox()
         })
 
         // set the focus to the document, to move it away from the start game
         // so that pressing enter is not triggering a state reset
         document.activeElement.blur()
+      }
+
+      function restartInputTextBox() {
+        const inputEl = document.getElementById("input")
+        inputEl.disabled = false
+        inputEl.value = ""
       }
 
       /**
@@ -336,6 +344,18 @@ img {
 
           if (inputEl["selectionStart"]) window.currentCol = input.selectionStart
         }
+      }
+
+      /**
+       * Bubble submission event to be processed by the upper layer
+       */
+      function submitGuess() {
+        const enterKeyEvent = new KeyboardEvent("keydown", {
+          bubbles: true,
+          cancelable: true,
+          key: "Enter"
+        })
+        window.dispatchEvent(enterKeyEvent)
       }
 
       /**
@@ -395,7 +415,10 @@ img {
         window.onkeydown = (event) => {
           var key = event.key
 
-          if (!inputable) return
+          if (!inputable) {
+            document.getElementById("input").disabled = true
+            return
+          }
 
           if (event.code === "Backspace") {
             if (window.currentCol === 0) {
@@ -439,6 +462,7 @@ img {
                     if (!isCorrectGuess) {
                       alert("You lost! The word was: " + correctAnswer)
                       inputable = false
+                      document.getElementById("input").disabled = true
 
                       // increase the lose rate
                       const currentWinRate = parseInt(document.getElementById("lose-counter").textContent)
@@ -452,6 +476,7 @@ img {
                   if (isCorrectGuess) {
                     alert("Congratulations!")
                     inputable = false
+                    document.getElementById("input").disabled = true
 
                     // increase the win rate
                     const currentWinRate = parseInt(document.getElementById("win-counter").textContent)
