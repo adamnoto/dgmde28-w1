@@ -213,6 +213,7 @@ img {
 
                 function enterAtCharBox(row, col, char) {
                   el = getCharBox(row, col)
+                  if (!el) return
                   el.style.border = "1px solid gray"
                   el.children[0].innerText = char
                 }
@@ -233,6 +234,8 @@ img {
 
     <button onclick='restart();'>Start game</button>
     <button style="display: none" id="offer-help-btn">Help</button>
+    <br/>
+    <input title="Your guess" type="text" id="input" maxlength="5" onkeyup='pushInput(event)'/>
     <script>
       // if "show" then the world board will be shown, and the hidden one will be hidden
       // and reversely, on "hidden", the hidden one will be shown instead of the wordle board
@@ -292,6 +295,47 @@ img {
         // set the focus to the document, to move it away from the start game
         // so that pressing enter is not triggering a state reset
         document.activeElement.blur()
+      }
+
+      /**
+       * This method reflects the word from the board into the textbox
+       */
+      function syncInput() {
+        const inputEl = document.getElementById("input")
+        if (document.activeElement == inputEl) {
+          // no need to do anything, it's focused, meaning that user
+          // enter the value from the textbox, and that value should
+          // be one that's reflected on the board
+          return
+        } else {
+          // user's focus is not on the textbox, so the board's value
+          // must be reflected into the input textbox
+          inputEl.value = getEnteredWord()
+        }
+      }
+
+      /**
+       * This method push changes from the keyboard to the board
+       */
+      function pushInput(event) {
+        const inputEl = document.getElementById("input")
+        const key = event.code
+        if (key.includes("Arrow")) {
+          if (inputEl["selectionStart"]) window.currentCol = input.selectionStart
+          return
+        }
+
+        const enteredWord = inputEl.value.toLowerCase()
+        if (getEnteredWord() !== '') {
+          window.currentCol = -1
+          enteredWord.split("").forEach((c, i) => {
+            enterAtCharBox(window.currentRow, i, c)
+            window.currentCol = i
+          })
+          for (i = window.currentCol + 1; i < WORD_LENGTH; i++) enterAtCharBox(window.currentRow, i, "")
+
+          if (inputEl["selectionStart"]) window.currentCol = input.selectionStart
+        }
       }
 
       /**
@@ -360,7 +404,6 @@ img {
               enterAtCharBox(window.currentRow, window.currentCol - 1, "")
               window.currentCol -= 1
             }
-            return
           } else if (event.code >= 'KeyA' && event.code <= 'KeyZ') {
             key = key.toLowerCase()
 
@@ -419,6 +462,8 @@ img {
               })
             }
           }
+
+          syncInput()
         }
       }
 
@@ -551,7 +596,6 @@ img {
 
             // prioritize fully correct by checking it first
             let downChar = char.toLowerCase()
-            console.log(char, downChar, fullyCorrectKeys, halfCorrectKeys, fullyCorrectKeys.includes(downChar), halfCorrectKeys.includes(downChar))
             if (fullyCorrectKeys.includes(downChar)) charBoardEl.classList.add("crfull")
             else if (halfCorrectKeys.includes(downChar)) charBoardEl.classList.add("crhalf")
             else if (notCorrectKeys.includes(downChar)) charBoardEl.classList.add("crnope")
