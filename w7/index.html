@@ -16,9 +16,9 @@ href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
 
 <style>
 body {
-    font-family: 'Waiting for the Sunrise', cursive; 
-    margin: 10px 50px; 
-    letter-spacing: 6px; 
+    font-family: 'Waiting for the Sunrise', cursive;
+    margin: 10px 50px;
+    letter-spacing: 6px;
     font-weight: bold;
     font-size: 25px;
     margin: 0 auto;
@@ -39,6 +39,8 @@ img {
 .board {
     display: flex;
     justify-content: center;
+    position: relative;
+    z-index: 2;
 }
 
 .row {
@@ -54,6 +56,8 @@ img {
     display: inline-block;
     margin: 5px;
     color: white;
+    z-index: 2;
+    background: black;
 }
 
 .square.disabled {
@@ -87,6 +91,7 @@ img {
 .stats-container {
     display: block;
     position: absolute;
+    z-index: 1;
     top: 30px;
     border: 3px dotted gray;
     margin-left: 8px;
@@ -106,6 +111,38 @@ img {
 
 .stats-container p #lose-counter {
     color: #ff7474;
+}
+
+.letterboard-container {
+  display: block;
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  margin-top: 15px;
+}
+
+.letterboard-container .lbgroup {
+  display: block;
+  margin-bottom: 10px;
+}
+
+.letterboard-container .lbgroup .chr {
+  display: inline-block;
+  height: 50px;
+  width: 50px;
+  border: 1px solid #61617c;
+  text-align: center;
+  margin-right: 2px;
+  margin-left: 2px;
+}
+
+.letterboard-container .lbgroup .chr span {
+  position: relative;
+  top: 5px;
+  left: 4px;
+  cursor: default;
+  -webkit-user-select: none;
+  user-select: none;
 }
 </style>
 
@@ -218,7 +255,8 @@ img {
           toggleBoard("show")
           hookTyping(word)
           hookOfferHelp(word)
-          showHelpButton(true)          
+          showHelpButton(true)
+          renderLetterboard()
         })
 
         // set the focus to the document, to move it away from the start game
@@ -447,7 +485,33 @@ img {
         }
       });
 
+      /**
+       * Render the used letterboard
+       */
+      function renderLetterboard() {
+        const lbGroups = [
+          ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+          ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+          ['↵', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '⌫']
+        ]
 
+        let lbEl = document.createElement("div")
+        lbEl.classList.add("letterboard-container")
+        lbGroups.forEach(group => {
+          let lbGroupEl = document.createElement("div")
+          lbGroupEl.classList.add("lbgroup")
+          group.forEach(char => {
+            let charBoardEl = document.createElement("div")
+            charBoardEl.classList.add("chr")
+            let spanEl = document.createElement("span")
+            spanEl.innerText = char
+            charBoardEl.appendChild(spanEl)
+            lbGroupEl.appendChild(charBoardEl)
+          })
+          lbEl.appendChild(lbGroupEl)
+        })
+        document.body.appendChild(lbEl)
+      }
 
 
 
