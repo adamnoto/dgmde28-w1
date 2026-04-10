@@ -78,6 +78,14 @@ img {
     vertical-align: middle;
 }
 
+/* apply gray text color for a character in the guess row */
+.square.row-gray { color: #5d5d5d; }
+/* apply gray text color for a character in the guess row */
+.square.row-green { border: 1px solid green; }
+/* apply gray text color for a character in the guess row */
+.square.row-yellow { color: 1px solid yellow; }
+
+
 .debug-container {
     display: block;
     position: absolute;
@@ -211,22 +219,6 @@ img {
       }
 
       /**
-       * Start the game board fresh
-       */
-      function restart() {
-        console.debug("Restarting the game")
-        window.currentRow = 0
-        window.currentCol = 0
-        window.wordleInDebugMode = document.getElementById("debug-check").checked
-
-        // set the focus to the document, to move it away from the start game
-        // so that pressing enter is not triggering a state reset
-        document.activeElement.blur()
-
-        render()
-      }
-
-      /**
        * Bubble submission event to be processed by the upper layer
        */
       function submitGuess() {
@@ -239,12 +231,6 @@ img {
       function markRedAt(pos) { markColorAt(pos, "red") }
       // apply gray border color for a character at a specific position in the current attempt's row
       function markNormalAt(pos) { markColorAt(pos, "gray") }
-      // apply yellow border color for a character at a specific position in the current attempt's row
-      function markYellowAt(pos) { markColorAt(pos, "yellow") }
-      // apply green border color for a character at a specific position in the current attempt's row
-      function markGreenAt(pos) { markColorAt(pos, "green") }
-      // apply gray text color for a character at a specific position in the current attempt's row
-      function markGrayAt(pos) { getCharBox(window.currentRow, pos).style.color = "#5d5d5d" }
       // apply specific coloring to indicate if a character at certain position is "disabled" (locked)
       function markUsabilityAt(pos, isUsable) {
         let charBox = getCharBox(window.currentRow, pos)
@@ -257,15 +243,23 @@ img {
        * Upon checking, a callback function will be called. The callback is mainly called/designed
        * for interactivity and animation restoration.
        */
-      function assessWord(correctAnswer, callback) {
-        var guess = getEnteredWord()
-        // var req = new XMLHttpRequest()
+      function assessWord({ answer, guess }, callback) {
+        var correctAnswer = answer
+
+        // var req = new XMLHttpRequest() but for now use the mock:
         var req = {
           onreadystatechange: null,
           readyState: XMLHttpRequest.DONE,
-          send: () => { this.onreadystatechange() },
+          send: function() { this.onreadystatechange() },
           open: (a, b, c) => {},
-        } // mock
+          status: 200,
+        }
+
+        // assessment details per character, grouped
+        let fullyCorrect = []
+        let halfCorrect = []
+        let notCorrect = []
+        let coloring = []
 
         req.onreadystatechange = function() {
           if (this.readyState === XMLHttpRequest.DONE) {
@@ -280,14 +274,11 @@ img {
               })
 
               // mark each letter board correctly
-              let fullyCorrect = []
-              let halfCorrect = []
-              let notCorrect = []
-              for (i = 0; i < WORD_LENGTH; i++) {
+              for (i = 0; i < answer.length; i++) {
                 let c = guess[i]; // the current character evaluated
-                if (correctAnswer[i] === c) markGreenAt(i), fullyCorrect.push(c)
-                else if (lettersFreq[c] && lettersFreq[c] > 0) markYellowAt(i), halfCorrect.push(c)
-                else markGrayAt(i), notCorrect.push(c)
+                if (correctAnswer[i] === c) fullyCorrect.push(c), coloring.push("row-green")
+                else if (lettersFreq[c] && lettersFreq[c] > 0) halfCorrect.push(c), coloring.push("row-yellow")
+                else notCorrect.push(c), coloring.push("row-gray")
 
                 isCorrectGuess &= (correctAnswer[i] === guess[i])
                 lettersFreq[c] -= 1
@@ -297,22 +288,29 @@ img {
             }
             callback({
               isValidWord: responseCode === 200,
-              isCorrectGuess: isCorrectGuess
+              isCorrectGuess: isCorrectGuess,
+              fullyCorrect,
+              halfCorrect,
+              notCorrect,
+              coloring,
             })
           }
         }
 
-        console.log("Entered word:", word,window.wordleInDebugMode
-          ? `correct answer: ${correctAnswer}`
-          : ".")
+        console.log(
+          "Entered word:", guess,
+          window.wordleInDebugMode
+            ? `correct answer: ${correctAnswer}`
+            : ".")
 
+        console.log(req)
         req.open('GET', `https://api.dictionaryapi.dev/api/v2/entries/en/${guess}`, true)
         req.send()
       }
 
       // start when DOM is fully loaded
       document.addEventListener("DOMContentLoaded", function() {
-        restart()
+        render()
 
         // listen to debug mode check and unchecking
         document.getElementById("debug-check").onclick = () => {
@@ -325,33 +323,66 @@ img {
         const gameNameHeader = React.createElement("h1", {style: {marginBottom: "15px"}}, "Wordle")
         // const h1WithoutId = React.createElement("h1", null, "Hello react world!")
 
-        myRoot.render(React.createElement("div",{id: "rendered-wordle-react-app"},
-          gameNameHeader,
-          renderWordleBoard({ maxAttempts: 6, wordLength: 5, guesses: [] }),
-          renderGameController(),
-          renderInputGuessSection(),
-          renderUsedLetterBoard()))
+        window.wordleInDebugMode = document.getElementById("debug-check").checked
+
+        // set the focus to the document, to move it away from the start game
+        // so that pressing enter is not triggering a state reset
+        document.activeElement.blur()
+
+        let answer = "moody"
+        assessWord({ answer, guess: "stray" }, (assessmentResult) => {
+          let { isValidWord, isCorrectGuess, fullyCorrect, halfCorrect, notCorrect } = assessmentResult
+          console.log(assessmentResult)
+          myRoot.render(React.createElement("div",{id: "rendered-wordle-react-app"},
+            gameNameHeader,
+            renderWordleBoard({ maxAttempts: 6, wordLength: 5, guesses: ["might", "flood", "stray"], answer }),
+            renderGameController(),
+            renderInputGuessSection(),
+            renderUsedLetterBoard(fullyCorrect, halfCorrect, notCorrect)))
+        })
       }
 
-      function renderWordleBoard({ maxAttempts, wordLength, guesses }) {
-        const wordCharBoxes = []
+      function renderWordRow({ key, answer, guess }) {
+        let wordCharBoxes = []
 
-        for (i = 0; i < maxAttempts; i++) {
-          for (j = 0; j < wordLength; j++) {
-            const id = `sq${i}_${j}`
+        assessWord({ answer, guess }, (assessmentResult) => {
+          const { fullyCorrect, halfCorrect, notCorrect, coloring } = assessmentResult
+
+          for (j = 0; j < answer.length; j++) {
+            let id = `sq${key}_${j}`
+            let char = guess[j] ?? ""
+
             wordCharBoxes.push(React.createElement(
               "div",
-              {className: "square", id: id, key: id},
+              {className: `square ${coloring[j]}`, id: id, key: id},
               React.createElement(
                 "span",
                 null,
-                "X"
+                char
               )
             ))
           }
+        })
+
+        return React.createElement(
+          "div",
+          {key},
+          wordCharBoxes
+        )
+      }
+
+      function renderWordleBoard({ maxAttempts, wordLength, guesses, answer }) {
+        let guessRows = []
+
+        for (let i = 0; i < maxAttempts; i++) {
+          console.debug("Creating guess row " + (i+1))
+          let guessWord = guesses[i] ?? []
+          guessRows.push(
+            renderWordRow({ answer, guess: guessWord, key: i  })
+          )
         }
 
-        console.log("charboxes", wordCharBoxes, i, j)
+        console.log("charboxes", guessRows, i, j)
 
         return React.createElement(
           "div",
@@ -359,12 +390,12 @@ img {
           [
             React.createElement(
               "div",
-              {className: "row", id: "wordle-row"},
-              wordCharBoxes
+              {className: "row", id: "wordle-row", key: "wordle-row"},
+              guessRows
             ),
             React.createElement(
               "div",
-              {id: "hidden-board-content", style: {display: "none"}},
+              {id: "hidden-board-content", style: {display: "none"}, key: "hidden-board-content"},
               React.createElement(
                 "p",
                 null,
@@ -382,13 +413,13 @@ img {
           [
             React.createElement(
               "button",
-              null,
+              {key: "start-btn"},
               "Start game"
             ),
 
             React.createElement(
               "button",
-              {id: "offer-help-btn", style: {display: "none"}},
+              {id: "offer-help-btn", style: {display: "none"}, key: "offer-help-btn"},
               "Help"
             )
           ]
@@ -402,12 +433,12 @@ img {
           [
             React.createElement(
               "input",
-              {title: "Your guess", type: "text", id: "input", maxLength: 5},
+              {title: "Your guess", type: "text", id: "input", maxLength: 5, key: "input"},
             ),
 
             React.createElement(
               "button",
-              {style: {marginLeft: "10px"}},
+              {style: {marginLeft: "10px"}, key: "checker-btn"},
               "Check my guess"
             )
           ]
